@@ -4,26 +4,26 @@ let publicKey, privateKey;
 const peers = {};
 
 const log = (msg) => {
-  const el = document.createElement("div");
-  el.textContent = msg;
-  document.getElementById("chatLog").appendChild(el);
-  el.scrollIntoView();
+  const line = document.createElement("div");
+  line.textContent = msg;
+  document.getElementById("chatLog").appendChild(line);
+  line.scrollIntoView();
 };
 
 const logE2EE = (msg) => {
-  const el = document.createElement("div");
-  el.textContent = msg;
-  document.getElementById("e2eeLog").appendChild(el);
-  el.scrollIntoView();
+  const line = document.createElement("div");
+  line.textContent = msg;
+  document.getElementById("e2eeLog").appendChild(line);
+  line.scrollIntoView();
 };
 
 async function connect() {
   username = document.getElementById("username").value.trim();
-  if (!username) return alert("Username required");
+  if (!username) return alert("Username is required");
 
-  const keys = await generateKeyPair();
-  publicKey = keys.base64;
-  privateKey = keys.privateKey;
+  const kp = await generateKeyPair();
+  publicKey = kp.base64;
+  privateKey = kp.privateKey;
 
   socket = io();
   socket.emit("join", { username, publicKey });
@@ -34,15 +34,16 @@ async function connect() {
   socket.on("message", (msg) => log(msg));
 
   socket.on("dm", async ({ from, encryptedMessage }) => {
-    logE2EE(`📥 Encrypted message from ${from}`);
-    const theirKey = await getPeerKey(from);
-    const sharedKey = await deriveAESKey(theirKey);
+    const peerKey = await getPeerKey(from);
+    const sharedKey = await deriveAESKey(peerKey);
     try {
-      const plain = await decrypt(sharedKey, encryptedMessage);
-      log(`[DM from ${from}]: ${plain}`);
-      logE2EE(`🔓 Decrypted: ${plain}`);
+      const decrypted = await decrypt(sharedKey, encryptedMessage);
+      log(`[DM from ${from}]: ${decrypted}`);
+      const preview = encryptedMessage.slice(0, 10) + "...";
+      logE2EE(`📥 Received encrypted from ${from}: ${preview}`);
+      logE2EE(`🔓 Decrypted DM from ${from}: ${decrypted}`);
     } catch {
-      log(`⚠️ Failed to decrypt DM from ${from}`);
+      log(`⚠️ Failed to decrypt message from ${from}`);
     }
   });
 
@@ -70,23 +71,28 @@ async function connect() {
 
 async function sendMessage() {
   const input = document.getElementById("message");
-  const msg = input.value.trim();
-  if (!msg) return;
+  const raw = input.value.trim();
+  input.value = "";
+  input.style.height = "auto"; // reset textarea height
 
-  if (msg.startsWith("/dm ")) {
-    const [, to, ...rest] = msg.split(" ");
-    const content = rest.join(" ");
-    const theirKey = await getPeerKey(to);
-    const sharedKey = await deriveAESKey(theirKey);
-    const encrypted = await encrypt(sharedKey, content);
-    log(`[You → ${to}]: ${content}`);
-    logE2EE(`📤 Encrypted DM to ${to}: ${encrypted}`);
+  if (!raw) return;
+
+  if (raw.startsWith("/dm ")) {
+    const [, to, ...rest] = raw.split(" ");
+    const msg = rest.join(" ");
+    const peerKey = await getPeerKey(to);
+    const sharedKey = await deriveAESKey(peerKey);
+    const encrypted = await encrypt(sharedKey, msg);
+
+    const preview = encrypted.slice(0, 10) + "...";
+    log(`[You → ${to}]: ${msg}`);
+    logE2EE(`📤 Encrypted DM to ${to}: ${preview}`);
+    logE2EE(`🔐 Using shared AES key for ${to}`);
+
     socket.emit("dm", { to, encryptedMessage: encrypted });
   } else {
-    socket.emit("message", msg);
+    socket.emit("message", raw);
   }
-
-  input.value = "";
 }
 
 async function generateKeyPair() {
@@ -104,10 +110,10 @@ async function generateKeyPair() {
 
 async function getPeerKey(name) {
   if (peers[name]) return importPeerKey(peers[name]);
-  return await new Promise((res) => {
+  return await new Promise((resolve) => {
     socket.emit("getPublicKey", name, async (key) => {
       peers[name] = key;
-      res(await importPeerKey(key));
+      resolve(await importPeerKey(key));
     });
   });
 }
@@ -131,22 +137,37 @@ async function deriveAESKey(theirPubKey) {
     false,
     ["encrypt", "decrypt"]
   );
-  logE2EE(`🔐 Shared AES key derived`);
+  logE2EE("🔐 Derived shared AES key");
   return key;
 }
 
-async function encrypt(key, text) {
+async function encrypt(key, msg) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const enc = new TextEncoder().encode(text);
-  const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc);
-  const out = new Uint8Array([...iv, ...new Uint8Array(cipher)]);
-  return btoa(String.fromCharCode(...out));
+  const encoded = new TextEncoder().encode(msg);
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    encoded
+  );
+  const full = new Uint8Array([...iv, ...new Uint8Array(ciphertext)]);
+  return btoa(String.fromCharCode(...full));
 }
 
-async function decrypt(key, b64) {
-  const buf = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+async function decrypt(key, base64) {
+  const buf = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
   const iv = buf.slice(0, 12);
   const data = buf.slice(12);
   const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
   return new TextDecoder().decode(plain);
 }
+
+// Tab switching on mobile
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const target = btn.dataset.tab;
+    document
+      .querySelectorAll(".tab-panel")
+      .forEach((p) => p.classList.add("hidden"));
+    document.getElementById(`tab-${target}`).classList.remove("hidden");
+  });
+});

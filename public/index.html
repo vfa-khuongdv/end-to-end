@@ -2,66 +2,104 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>🔐 E2EE Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body class="bg-gray-100 text-gray-900">
-    <div class="max-w-6xl mx-auto mt-10 p-6 bg-white shadow rounded">
+    <div class="max-w-6xl mx-auto mt-10 p-4 md:p-6 bg-white shadow rounded">
       <h2 class="text-2xl font-bold mb-4">🔐 End-to-End Encrypted Chat</h2>
 
-      <div class="mb-4 flex gap-2">
+      <!-- Username input -->
+      <div class="mb-4 flex flex-col sm:flex-row gap-2">
         <input
           id="username"
           placeholder="Enter your username"
-          class="border p-2 rounded w-full"
+          class="border p-2 rounded w-full sm:w-auto flex-grow"
         />
         <button
           onclick="connect()"
-          class="bg-blue-600 text-white px-4 py-2 rounded"
+          class="bg-blue-600 text-white px-4 py-2 rounded w-full sm:w-auto"
         >
           Connect
         </button>
       </div>
 
-      <div id="chatUI" class="hidden grid grid-cols-4 gap-4 mt-4">
-        <!-- Chat log -->
-        <div class="col-span-2 border rounded p-4 bg-gray-50">
+      <!-- Chat UI -->
+      <div id="chatUI" class="hidden mt-4">
+        <!-- Tabs (mobile only) -->
+        <div class="flex justify-around border-b mb-2 md:hidden">
+          <button
+            class="tab-btn px-4 py-2 font-medium text-gray-700"
+            data-tab="chat"
+          >
+            💬 Chat
+          </button>
+          <button
+            class="tab-btn px-4 py-2 font-medium text-gray-700"
+            data-tab="log"
+          >
+            🔍 Log
+          </button>
+          <button
+            class="tab-btn px-4 py-2 font-medium text-gray-700"
+            data-tab="users"
+          >
+            👥 Users
+          </button>
+        </div>
+
+        <!-- Panels -->
+        <div class="grid md:grid-cols-4 gap-4">
+          <!-- Chat -->
           <div
-            id="chatLog"
-            class="h-80 overflow-y-auto mb-4 space-y-1 text-sm font-mono"
-          ></div>
-          <div class="flex gap-2">
-            <input
-              id="message"
-              placeholder="Type a message or /dm user msg"
-              class="border p-2 rounded w-full"
-            />
-            <button
-              onclick="sendMessage()"
-              class="bg-green-600 text-white px-4 py-2 rounded"
-            >
-              Send
-            </button>
+            id="tab-chat"
+            class="tab-panel md:col-span-2 flex flex-col h-[70vh]"
+          >
+            <div
+              id="chatLog"
+              class="flex-grow overflow-auto mb-2 bg-gray-50 p-2 rounded text-sm font-mono"
+            ></div>
+            <div class="flex gap-2 sticky bottom-0 bg-white p-2">
+              <textarea
+                id="message"
+                rows="1"
+                placeholder="Type message or /dm user ..."
+                class="border p-2 rounded w-full resize-none overflow-hidden"
+              ></textarea>
+              <button
+                onclick="sendMessage()"
+                class="bg-green-600 text-white px-4 py-2 rounded"
+              >
+                Send
+              </button>
+            </div>
           </div>
-        </div>
 
-        <!-- E2EE log -->
-        <div
-          class="border rounded p-4 bg-black text-green-300 text-sm font-mono"
-        >
-          <h3 class="font-bold text-white mb-2">🔍 E2EE Debug Log</h3>
-          <div id="e2eeLog" class="h-96 overflow-y-auto space-y-1"></div>
-        </div>
+          <!-- User list -->
+          <div
+            id="tab-users"
+            class="tab-panel hidden md:flex flex-col bg-white p-2 rounded text-sm h-[70vh]"
+          >
+            <h3 class="font-bold mb-1">👥 Users</h3>
+            <div id="userList" class="flex-grow overflow-auto space-y-1"></div>
+          </div>
 
-        <!-- User list -->
-        <div class="border rounded p-4 bg-white text-sm">
-          <h3 class="font-bold mb-2">👥 Users</h3>
-          <div id="userList" class="space-y-1"></div>
+          <!-- Debug log -->
+
+          <div
+            id="tab-log"
+            class="tab-panel hidden md:flex flex-col bg-black text-green-300 p-2 rounded text-sm font-mono h-[70vh]"
+          >
+            <h3 class="text-white font-bold mb-1">🔍 Debug Log</h3>
+            <div id="e2eeLog" class="flex-grow overflow-auto space-y-1"></div>
+          </div>
         </div>
       </div>
     </div>
 
+    <!-- Socket.IO client -->
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/script.js"></script>
+    <script src="script.js"></script>
   </body>
 </html>

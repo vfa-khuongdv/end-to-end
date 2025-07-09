@@ -40,9 +40,11 @@ io.on("connection", (socket) => {
   });
 
   socket.on("message", (msg) => {
-    const user = users.get(socket.id);
-    if (user) {
-      socket.broadcast.emit("message", `${user}: ${msg}`);
+    const username = users.get(socket.id);
+    if (username) {
+      const fullMessage = `${username}: ${msg}`;
+      socket.emit("message", fullMessage); // 👈 Send to sender
+      socket.broadcast.emit("message", fullMessage); // 👈 Send to others
     }
   });
 
