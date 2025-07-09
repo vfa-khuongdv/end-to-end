@@ -171,3 +171,18 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
     document.getElementById(`tab-${target}`).classList.remove("hidden");
   });
 });
+
+function generateRandomUsername() {
+  const prefix = "guest_";
+  const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return prefix + suffix;
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("username");
+  if (input) {
+    const randomName = generateRandomUsername();
+    input.value = randomName;
+    connect(); // auto connect immediately
+  }
+});
