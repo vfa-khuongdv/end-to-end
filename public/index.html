@@ -15,6 +15,7 @@
         <input
           id="username"
           placeholder="Enter your username"
+          disabled
           class="border p-2 rounded w-full sm:w-auto flex-grow"
         />
 
@@ -62,12 +63,11 @@
               class="flex-grow overflow-auto mb-2 bg-gray-50 p-2 rounded text-sm font-mono"
             ></div>
             <div class="flex gap-2 sticky bottom-0 bg-white p-2">
-              <textarea
+              <input
                 id="message"
-                rows="1"
                 placeholder="Type message or /dm user ..."
                 class="border p-2 rounded w-full resize-none overflow-hidden"
-              ></textarea>
+              />
               <button
                 onclick="sendMessage()"
                 class="bg-green-600 text-white px-4 py-2 rounded"
