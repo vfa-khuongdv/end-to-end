@@ -1,0 +1,35 @@
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+
+# Build artifacts (just in case)
+dist/
+build/
+
+# VSCode / IDE configs
+.vscode/
+.idea/
+
+# Optional: system files
+*.swp
+*.swo
+.vscode/
