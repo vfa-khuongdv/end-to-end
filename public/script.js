@@ -26,12 +26,12 @@ async function connect() {
   privateKey = kp.privateKey;
 
   socket = io();
-  socket.emit("join", { username, publicKey });
 
-  document.getElementById("chatUI").classList.remove("hidden");
-  logE2EE(`[${username}] 🔑 ECDH key generated`);
-
-  socket.on("message", (msg) => log(msg));
+  // Set up event listeners BEFORE joining
+  socket.on("message", (msg) => {
+    console.log("Received message:", msg);
+    log(msg);
+  });
 
   socket.on("dm", async ({ from, encryptedMessage }) => {
     const peerKey = await getPeerKey(from);
@@ -67,6 +67,12 @@ async function connect() {
       list.appendChild(btn);
     });
   });
+
+  // Now emit join after event listeners are set up
+  socket.emit("join", { username, publicKey });
+
+  document.getElementById("chatUI").classList.remove("hidden");
+  logE2EE(`[${username}] 🔑 ECDH key generated`);
 }
 
 async function sendMessage() {
@@ -91,6 +97,7 @@ async function sendMessage() {
 
     socket.emit("dm", { to, encryptedMessage: encrypted });
   } else {
+    console.log("Sending message:", raw);
     socket.emit("message", raw);
   }
 }
@@ -160,6 +167,19 @@ async function decrypt(key, base64) {
   const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
   return new TextDecoder().decode(plain);
 }
+
+// Enter key support for sending messages
+document.addEventListener("DOMContentLoaded", () => {
+  const messageInput = document.getElementById("message");
+  if (messageInput) {
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  }
+});
 
 // Tab switching on mobile
 document.querySelectorAll(".tab-btn").forEach((btn) => {

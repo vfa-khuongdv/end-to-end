@@ -43,6 +43,8 @@ io.on("connection", (socket) => {
     const username = users.get(socket.id);
     if (username) {
       const fullMessage = `${username}: ${msg}`;
+      console.log(`Processing message from ${username}: ${msg}`);
+      console.log(`Sending back to sender: ${fullMessage}`);
       socket.emit("message", fullMessage); // 👈 Send to sender
       socket.broadcast.emit("message", fullMessage); // 👈 Send to others
     }
